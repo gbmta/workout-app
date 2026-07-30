@@ -86,6 +86,18 @@ shows fill color for logged/current/untouched. Idea: show a small muscle-group i
 per capsule (reuse the SF Symbol mapping already written for `VolumeTrackerView`) so
 you can see at a glance which muscle each exercise/position hits. Low priority polish.
 
+### 7. Keypad doesn't appear when editing a target field — bug, needs repro on device
+Reported 2026-07-30 editing Incline Smith Machine Press: tapping a Sets/Reps field
+doesn't pop the number keypad. In the simulator the field clearly *focuses* — accent
+ring, blinking cursor, and the keyboard "Done" accessory bar shows — but the on-screen
+keys don't draw. That signature points at the sim's hardware-keyboard setting
+(`hw=Automatic`, `HardwareKeyboardLastSeen`) suppressing the software keyboard, i.e. a
+simulator artifact rather than app code — but it was reported from real use, so **repro
+on a physical device before assuming that.** If it reproduces on device, suspect the
+`.focused`/`FocusState` wiring in `ExerciseTargetFields` or a responder conflict with the
+`.onTapGesture` row selection added in the multi-select change. Related tooling note:
+[[simulator-toggle-taps]] — sim input has already faked one "app bug" this project.
+
 ## Suggested order for next session
 
 **#1–#4 are done.** Left: **#5** (explaining the volume zones) — still a genuine design
