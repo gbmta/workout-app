@@ -6,6 +6,7 @@ struct TemplateDetailView: View {
     @EnvironmentObject private var store: WorkoutStore
     @State private var isPresentingAddExercise = false
     @State private var editingNoteFor: ExerciseTemplateEntry?
+    @State private var editingTargetFor: ExerciseTemplateEntry?
 
     private var template: WorkoutTemplate? {
         store.templates.first { $0.id == templateID }
@@ -49,9 +50,14 @@ struct TemplateDetailView: View {
                                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
 
                             ForEach(template.exercises) { entry in
-                                ExerciseEntryCard(entry: entry) {
-                                    editingNoteFor = entry
+                                Button {
+                                    editingTargetFor = entry
+                                } label: {
+                                    ExerciseEntryCard(entry: entry) {
+                                        editingNoteFor = entry
+                                    }
                                 }
+                                .buttonStyle(.plain)
                                 .listRowSeparator(.hidden)
                                 .listRowBackground(Color.clear)
                                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
@@ -96,6 +102,9 @@ struct TemplateDetailView: View {
                 }
                 .sheet(item: $editingNoteFor) { entry in
                     EditExerciseNoteView(templateID: templateID, entry: entry)
+                }
+                .sheet(item: $editingTargetFor) { entry in
+                    EditExerciseTargetView(templateID: templateID, entry: entry)
                 }
             } else {
                 ContentUnavailableView("Template deleted", systemImage: "trash")

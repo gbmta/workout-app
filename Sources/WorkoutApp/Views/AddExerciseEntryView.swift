@@ -51,7 +51,9 @@ struct AddExerciseEntryView: View {
     }
 
     private var isValid: Bool {
-        !resolvedName.isEmpty && !resolvedMuscles.isEmpty && repRangeLow <= repRangeHigh
+        !resolvedName.isEmpty
+            && !resolvedMuscles.isEmpty
+            && ExerciseTargetFields.isValidRange(low: repRangeLow, high: repRangeHigh)
     }
 
     var body: some View {
@@ -182,13 +184,12 @@ struct AddExerciseEntryView: View {
 
     @ViewBuilder
     private var targetSection: some View {
-        Section("Target") {
-            Stepper("Sets: \(targetSets)", value: $targetSets, in: 1...10)
-            Stepper("Rep range low: \(repRangeLow)", value: $repRangeLow, in: 1...50)
-            Stepper("Rep range high: \(repRangeHigh)", value: $repRangeHigh, in: 1...50)
-            Toggle("Bodyweight", isOn: $isBodyweight)
-        }
-        .listRowBackground(Theme.surface)
+        ExerciseTargetFields(
+            targetSets: $targetSets,
+            repRangeLow: $repRangeLow,
+            repRangeHigh: $repRangeHigh,
+            isBodyweight: $isBodyweight
+        )
     }
 
     // MARK: - Actions

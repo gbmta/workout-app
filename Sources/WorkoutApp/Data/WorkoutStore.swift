@@ -67,6 +67,27 @@ final class WorkoutStore: ObservableObject {
         saveTemplates()
     }
 
+    /// Edits an existing entry's target in place. Deliberately can't change
+    /// `exerciseName` — that's the join key for `loggedWeights`/`loggedReps` and for
+    /// logged `SetLog` history, so renaming here would orphan it. `loggedWeights`,
+    /// `loggedReps`, `notes` and `muscleGroups` are left untouched.
+    func updateExercise(
+        _ entryID: ExerciseTemplateEntry.ID,
+        in templateID: WorkoutTemplate.ID,
+        targetSets: Int,
+        repRangeLow: Int,
+        repRangeHigh: Int,
+        isBodyweight: Bool
+    ) {
+        guard let templateIndex = templates.firstIndex(where: { $0.id == templateID }),
+              let entryIndex = templates[templateIndex].exercises.firstIndex(where: { $0.id == entryID }) else { return }
+        templates[templateIndex].exercises[entryIndex].targetSets = targetSets
+        templates[templateIndex].exercises[entryIndex].repRangeLow = repRangeLow
+        templates[templateIndex].exercises[entryIndex].repRangeHigh = repRangeHigh
+        templates[templateIndex].exercises[entryIndex].isBodyweight = isBodyweight
+        saveTemplates()
+    }
+
     func updateNotes(_ notes: String?, forExercise entryID: ExerciseTemplateEntry.ID, in templateID: WorkoutTemplate.ID) {
         guard let templateIndex = templates.firstIndex(where: { $0.id == templateID }),
               let entryIndex = templates[templateIndex].exercises.firstIndex(where: { $0.id == entryID }) else { return }

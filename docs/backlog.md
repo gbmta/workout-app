@@ -21,14 +21,20 @@ ranges. All of that is committed on `main` now.
 simulator: "chest" returns 9 exercises (was 1 — only "Machine Chest Press" matched by
 name), "core" returns the 4 abs exercises, name search unaffected.
 
-### 2. Can't edit an exercise's sets/reps/target from the template screen — missing feature
-Tapping an exercise row in `TemplateDetailView` does nothing. There's no way to change
-targetSets/repRangeLow/repRangeHigh/isBodyweight for an already-added exercise — only
-add, delete, and edit notes exist. Expectation: tapping the row (or a dedicated edit
-affordance) opens something like `AddExerciseEntryView` pre-filled, saving via a new
-`WorkoutStore.updateExercise(...)` that mutates the entry in place without touching
-`loggedWeights`/`loggedReps`/`notes`. This is a real CRUD gap (Add + Delete exist,
-Update doesn't, aside from notes).
+### 2. ~~Can't edit an exercise's sets/reps/target from the template screen~~ — DONE 2026-07-30
+Tapping an exercise card in `TemplateDetailView` now opens `EditExerciseTargetView`, a
+dedicated sheet (modeled on `EditExerciseNoteView`) with the target controls pre-filled.
+It saves through `WorkoutStore.updateExercise(_:in:targetSets:repRangeLow:repRangeHigh:isBodyweight:)`,
+which touches only those four fields — `loggedWeights`/`loggedReps`/`notes`/`muscleGroups`
+are left alone.
+
+Chose a dedicated sheet over reusing `AddExerciseEntryView` because that view is mostly
+catalog picker, and `exerciseName` is the join key for logged history — an edit screen
+must not be able to change it. The sheet shows the entry's muscles read-only with a note
+to remove/re-add to change them.
+
+Sets/reps/bodyweight controls now live in one shared `ExerciseTargetFields` used by both
+the add and edit sheets, so **#4's redesign only has to be done once**.
 
 ### 3. Bodyweight toggle bug — needs repro
 User report: "the bodyweight slider option doesn't turn off when you turn it on."
@@ -62,9 +68,8 @@ you can see at a glance which muscle each exercise/position hits. Low priority p
 
 ## Suggested order for next session
 
-**#1 is done.** Next up **#2 (edit exercise)** — biggest functional gap, but needs one
-design call: sheet reusing `AddExerciseEntryView` vs. a dedicated lighter-weight edit
-view. Then **#3**
-once reproduced. **#4** and **#5** are genuine design discussions, not quick fixes —
-good candidates for a "let's talk through it" opening rather than diving into code.
-**#6** whenever there's spare time at the end.
+**#1 and #2 are done.** Next up **#3 (bodyweight toggle)** — reproduce in the simulator
+before fixing; note the edit sheet added in #2 is a second place that toggle now lives.
+**#4** and **#5** are genuine design discussions, not quick fixes — good candidates for a
+"let's talk through it" opening rather than diving into code; #4 now only has to change
+`ExerciseTargetFields`. **#6** whenever there's spare time at the end.
