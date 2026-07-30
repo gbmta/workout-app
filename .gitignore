@@ -1,0 +1,29 @@
+# Xcode
+build/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+
+# XcodeGen-generated project (regenerate via `xcodegen generate`)
+*.xcodeproj/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# AWS / secrets
+.env
+.env.*
+*.pem
+aws-exports.json
+samconfig.toml.local
+.aws-sam/
