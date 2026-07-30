@@ -12,9 +12,9 @@ private enum TargetField: Hashable {
 /// the two can't drift apart.
 ///
 /// Tap-to-type fields rather than steppers: reaching 15 reps used to be seven taps on
-/// a `Stepper`. The field styling follows `SetRow` in `ActiveWorkoutView`, which is
-/// already the app's "type a number" idiom — but on `.numberPad`, since sets and reps
-/// are whole numbers (`SetRow` needs `.decimalPad` only because weight isn't).
+/// a `Stepper`. Styling and keyboard both follow `SetRow` in `ActiveWorkoutView`, the
+/// app's existing "type a number" idiom. Sets and reps are `Int`, so a typed decimal
+/// rounds to the nearest whole number on commit rather than the "." being a dead key.
 struct ExerciseTargetFields: View {
     @Binding var targetSets: Int
     @Binding var repRangeLow: Int
@@ -68,7 +68,7 @@ struct ExerciseTargetFields: View {
             Toggle("Bodyweight", isOn: $isBodyweight)
                 // Declared on one row on purpose: `.toolbar` on the enclosing Section is
                 // applied to every row, which stacks up a Done button per row.
-                // .numberPad has no return key, so the user needs this way out.
+                // .decimalPad has no return key, so the user needs this way out.
                 .toolbar {
                     ToolbarItemGroup(placement: .keyboard) {
                         Spacer()
@@ -108,7 +108,7 @@ private struct NumberField: View {
             .font(Theme.numberFont(20))
             .monospacedDigit()
             .multilineTextAlignment(.center)
-            .keyboardType(.numberPad)
+            .keyboardType(.decimalPad)
             .focused($focused, equals: field)
             .frame(width: 68, height: 44)
             .background(Theme.surfaceRaised)
@@ -120,17 +120,17 @@ private struct NumberField: View {
             .accessibilityLabel(accessibilityLabel)
             .onAppear { text = String(value) }
             .onChange(of: text) { _, newText in
-                // Belt and braces next to .numberPad: a hardware or dictation keyboard
+                // Belt and braces next to .decimalPad: a hardware or dictation keyboard
                 // can still deliver anything.
-                let digits = newText.filter(\.isNumber)
-                if digits != newText {
-                    text = digits
+                let cleaned = Self.sanitized(newText)
+                if cleaned != newText {
+                    text = cleaned
                     return
                 }
                 // Track live so the range warning and the Save button keep up with
                 // typing, but only for in-range values — clamping waits for blur so a
                 // digit can be deleted mid-edit.
-                if let parsed = Int(digits), range.contains(parsed) {
+                if let parsed = Self.wholeNumber(from: cleaned), range.contains(parsed) {
                     value = parsed
                 }
             }
@@ -151,8 +151,37 @@ private struct NumberField: View {
 
     /// Leaving the field empty keeps the previous value rather than inventing a 0 or 1.
     private func commit() {
-        let clamped = min(max(Int(text) ?? value, range.lowerBound), range.upperBound)
+        let entered = Self.wholeNumber(from: text) ?? value
+        let clamped = min(max(entered, range.lowerBound), range.upperBound)
         value = clamped
         text = String(clamped)
+    }
+
+    /// Digits plus at most one leading-digit-anchored decimal separator. Either separator
+    /// is accepted so a comma-locale keyboard works too.
+    private static func sanitized(_ input: String) -> String {
+        var result = ""
+        var hasSeparator = false
+        for character in input {
+            if character.isNumber {
+                result.append(character)
+            } else if isSeparator(character), !hasSeparator, !result.isEmpty {
+                hasSeparator = true
+                result.append(character)
+            }
+        }
+        return result
+    }
+
+    /// Sets and reps are whole numbers in the model, so a typed decimal rounds to the
+    /// nearest one — 8.6 reps becomes 9 rather than being silently dropped.
+    private static func wholeNumber(from input: String) -> Int? {
+        let normalized = String(input.map { isSeparator($0) ? "." : $0 })
+        guard let value = Double(normalized), value.isFinite else { return nil }
+        return Int(value.rounded())
+    }
+
+    private static func isSeparator(_ character: Character) -> Bool {
+        character == "." || character == ","
     }
 }

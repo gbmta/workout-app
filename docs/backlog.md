@@ -52,17 +52,20 @@ bodyweight-default exercise. Catalog defaults still apply on a fresh sheet.
 
 ### 4. ~~Target section in Add Exercise is confusing~~ — DONE 2026-07-30
 Replaced the three Steppers with tap-to-type number fields in `ExerciseTargetFields`,
-following the `SetRow` idiom, on `.numberPad` (whole numbers, so no `.decimalPad` like
-`SetRow` needs for weight). Layout is now `Sets [4]` / `Reps [8] – [10]` / Bodyweight.
-Setting 15 reps went from 7 stepper taps to 3.
+following the `SetRow` idiom, keyboard included: `.decimalPad`, per user preference for
+consistency with the workout logger. Layout is now `Sets [4]` / `Reps [8] – [10]` /
+Bodyweight. Setting 15 reps went from 7 stepper taps to 3.
 
 Details worth knowing before touching it again:
 - **Focus clears the field**, with the current value left as the placeholder. Without
   that, the caret lands where you tapped and typing 15 into "10" gives 1510.
 - **Empty on blur keeps the previous value**; out-of-range input clamps (99 → 50).
+- **Typed decimals round to the nearest whole number on commit** (8.6 → 9). Sets and reps
+  are `Int` in the model, so the `.` would otherwise be a dead key. A lone `.` is dropped
+  and keeps the previous value. Both `.` and `,` are accepted for comma locales.
 - **One keyboard toolbar `Done`**, declared on a single row on purpose — `.toolbar` on
   the enclosing `Section` is applied per row and stacks up one button per row.
-  `.numberPad` has no return key, so the button is load-bearing.
+  `.decimalPad` has no return key, so the button is load-bearing.
 - Invalid ranges now say so in the section footer instead of only disabling Save.
 
 Also fixed `Theme.surfaceRaised`, which was `0xFFFFFF` in light mode — identical to
