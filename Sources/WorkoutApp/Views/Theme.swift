@@ -20,6 +20,27 @@ enum Theme {
     static let danger = dynamicColor(dark: 0xF87171, light: 0xDC2626)
     static let zoneUnder = dynamicColor(dark: 0x5A5A64, light: 0x9CA3AF)
 
+    // MARK: - Exercise motion diagrams
+
+    /// Tokens for the animated exercise-form diagrams. The design is a neutral
+    /// grey figure + a single accent ramp (accent200 lightest → accent800
+    /// darkest) used for the muscle glow, joint dots, and bar/plate. Per the
+    /// handoff, the accent ramp is swapped to the app's volt-green. Dark values
+    /// are the design intent; light values are darkened so the figure and glow
+    /// stay legible on a white card.
+    enum Diagram {
+        static let body = Theme.dynamicColor(dark: 0x75798C, light: 0x84879A)      // body-mass strokes
+        static let headFill = Theme.dynamicColor(dark: 0x3F424D, light: 0xE6E7EC)  // head / bench fill
+        static let rail = Theme.dynamicColor(dark: 0x595D6C, light: 0xBABCC5)      // scaffolding rails
+
+        static let accent200 = Theme.dynamicColor(dark: 0xEBFFC4, light: 0x4B7610) // glow core
+        static let accent300 = Theme.dynamicColor(dark: 0xD6FF7A, light: 0x5C8F16) // dots, plate stroke, label
+        static let accent400 = Theme.dynamicColor(dark: 0xBFFF3C, light: 0x86CF20) // glow halo
+        static let accent500 = Theme.dynamicColor(dark: 0x9BE22B, light: 0x6BA31E) // leader lines
+        static let accent600 = Theme.dynamicColor(dark: 0x7BC618, light: 0x7BC618) // plumb / bar-path dashes
+        static let accent800 = Theme.dynamicColor(dark: 0x38501A, light: 0xDDF0B5) // plate / bar fill
+    }
+
     // MARK: - Type
 
     static func numberFont(_ size: CGFloat) -> Font {

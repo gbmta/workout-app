@@ -161,7 +161,7 @@ private struct ExercisePage: View {
                         }
                     }
 
-                    ExerciseMediaPlaceholderView()
+                    ExerciseMediaPlaceholderView(exerciseName: exercise.exerciseName)
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Notes")

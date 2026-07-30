@@ -86,8 +86,14 @@ Don't re-litigate these without the user raising them:
 - **No error/warning state for missing history.** Unknown past weights/reps render as a
   dash. An earlier `needsConfirmation` amber-badge concept was removed by user request —
   don't reintroduce warnings for incomplete data.
-- **Exercise demo media is an intentional placeholder** (`ExerciseMediaPlaceholderView`);
-  there are no real assets and none should be invented.
+- **Exercise demos are data-driven vector diagrams, not photos/video.** All 50 catalog
+  exercises have an animated motion diagram (`ExercisePoses` → `ExerciseMotionDiagramView`,
+  a generic `Canvas`/`TimelineView` renderer ported from a design handoff). Adding/editing one
+  is pure data entry — no new drawing code; extend the scaffold vocabulary
+  (`PoseScaffold.lines`/`.rects`, a bar `len`) rather than writing bespoke drawing. The
+  `ExerciseMediaPlaceholderView` "Demo coming soon" fallback now only shows for a catalog
+  exercise with no `ExercisePoses` entry (none today). No raster/video assets exist and none
+  should be invented; the joint-keyframe diagrams are the intended medium.
 - **Templates must always be complete enough to run** — every exercise carries a real
   sets/rep-range target.
 

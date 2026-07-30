@@ -98,8 +98,30 @@ on a physical device before assuming that.** If it reproduces on device, suspect
 `.onTapGesture` row selection added in the multi-select change. Related tooling note:
 [[simulator-toggle-taps]] — sim input has already faked one "app bug" this project.
 
+### 8. ~~Animated exercise motion diagrams (all 50)~~ — DONE 2026-07-30
+Shipped the design handoff ("Exercise motion diagram system"). A generic, data-driven
+`Canvas` + `TimelineView` renderer (`ExerciseMotionDiagramView`) draws a schematic figure
+looping one rep on a cosine ease, with a muscle-target glow that pulses brightest where the
+lift should be felt. Ported **all 50 poses** into Swift value types
+(`Models/ExercisePose.swift` + `Data/ExercisePoses.swift`, canonical order), keyed to catalog
+`Exercise.name` — every name maps exactly, so all 50 catalog exercises now have a diagram.
+(First landed as 10; the handoff's "all 50" bundle followed the same day.)
+
+- Shows on the **workout screen** where the `ExerciseMediaPlaceholderView` demo slot was.
+  The "Demo coming soon" fallback now only shows for a pose-less exercise (none today). The
+  diagram card is followed by the pose's "Feel" mind-muscle cue. Tempo copy is deliberately
+  *not* shown — it would contradict the user's own configured target.
+- Accent ramp swapped from the handoff's Nocturne blurple to a **volt-green ramp** (new
+  `Theme.Diagram` tokens) per user choice, so it reads as part of the app. Body figure stays
+  neutral grey; light-mode ramp is darkened for legibility on white. Verified both modes in
+  the sim across front/side views, cables, machine rails, seats, and the pulldown handle bar.
+- The all-50 bundle extended the scaffold vocabulary: `PoseScaffold.lines` (free rail/machine
+  strokes), `PoseScaffold.rects` (pads/seats), and a bar `len` (horizontal handle bar, e.g.
+  lat pulldown). Renderer handles all three; adding a new exercise stays pure data entry.
+- Honors Reduce Motion (freezes on the end pose, glow at mid opacity).
+
 ## Suggested order for next session
 
-**#1–#4 are done.** Left: **#5** (explaining the volume zones) — still a genuine design
-discussion, mostly about tone: how much hypertrophy-research detail to surface vs. keep it
-simple. Then **#6** (muscle icons on the workout progress capsules) as polish.
+**#1–#4 and #8 are done.** Left: **#5** (explaining the volume zones) — still a genuine
+design discussion, mostly about tone: how much hypertrophy-research detail to surface vs.
+keep it simple. Then **#6** (muscle icons on the workout progress capsules) as polish.
