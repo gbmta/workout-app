@@ -11,17 +11,15 @@ SwiftUI app, dark-first volt-green theme (`Theme.swift`). Three tabs: Templates
 Volume (weekly muscle-group set counts vs. hypertrophy ranges). 50-exercise tagged
 catalog in `SeedExercises.swift` (category + primary muscles per exercise). Templates
 now show a volume summary card projecting logged sets + this template against weekly
-ranges. Everything's staged in git but **not committed** — there's a large pile of
-uncommitted work; consider committing before starting new changes.
+ranges. All of that is committed on `main` now.
 
 ## Backlog items, roughly in priority order
 
-### 1. Search doesn't match muscle/category tags — bug, quick fix
-In `AddExerciseEntryView.matches`, search only filters `exercise.name`. Searching
-"chest" should also surface exercises tagged `.chest` even if the name doesn't contain
-"chest" (e.g. "Barbell Bench Press"). Fix: also match against
-`exercise.primaryMuscleGroups.map(\.displayName)` and
-`exercise.categories.map(\.displayName)`.
+### 1. ~~Search doesn't match muscle/category tags~~ — DONE 2026-07-30
+`AddExerciseEntryView` now matches the query against the exercise's name, its
+`primaryMuscleGroups` display names, and its `categories` display names. Verified in the
+simulator: "chest" returns 9 exercises (was 1 — only "Machine Chest Press" matched by
+name), "core" returns the 4 abs exercises, name search unaffected.
 
 ### 2. Can't edit an exercise's sets/reps/target from the template screen — missing feature
 Tapping an exercise row in `TemplateDetailView` does nothing. There's no way to change
@@ -64,9 +62,9 @@ you can see at a glance which muscle each exercise/position hits. Low priority p
 
 ## Suggested order for next session
 
-Start with **#1 (search fix)** — smallest, clearest, no design decisions needed.
-Then **#2 (edit exercise)** — biggest functional gap, but needs one design call: sheet
-reusing `AddExerciseEntryView` vs. a dedicated lighter-weight edit view. Then **#3**
+**#1 is done.** Next up **#2 (edit exercise)** — biggest functional gap, but needs one
+design call: sheet reusing `AddExerciseEntryView` vs. a dedicated lighter-weight edit
+view. Then **#3**
 once reproduced. **#4** and **#5** are genuine design discussions, not quick fixes —
 good candidates for a "let's talk through it" opening rather than diving into code.
 **#6** whenever there's spare time at the end.

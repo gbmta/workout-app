@@ -27,7 +27,16 @@ struct AddExerciseEntryView: View {
         let base = SeedExercises.catalog(for: categoryFilter)
         let query = search.trimmingCharacters(in: .whitespaces)
         guard !query.isEmpty else { return base }
-        return base.filter { $0.name.localizedCaseInsensitiveContains(query) }
+        return base.filter { matches($0, query: query) }
+    }
+
+    /// Searching "chest" should surface Barbell Bench Press, so the query is matched
+    /// against the exercise's muscle and category tags as well as its name.
+    private func matches(_ exercise: Exercise, query: String) -> Bool {
+        let haystack = [exercise.name]
+            + exercise.primaryMuscleGroups.map(\.displayName)
+            + exercise.categories.map(\.displayName)
+        return haystack.contains { $0.localizedCaseInsensitiveContains(query) }
     }
 
     private var resolvedName: String {
