@@ -107,23 +107,28 @@ struct AddExerciseEntryView: View {
                     .foregroundStyle(Theme.textSecondary)
             }
             ForEach(matches) { exercise in
-                Button {
-                    select(exercise)
-                } label: {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(exercise.name)
-                                .foregroundStyle(Theme.textPrimary)
-                            Text(exercise.primaryMuscleGroups.map(\.displayName).joined(separator: " · "))
-                                .font(.caption)
-                                .foregroundStyle(Theme.textSecondary)
-                        }
-                        Spacer()
-                        if selectedExercise?.id == exercise.id {
-                            Image(systemName: "checkmark")
-                                .foregroundStyle(Theme.accent)
+                HStack(spacing: 0) {
+                    Button {
+                        select(exercise)
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(exercise.name)
+                                    .foregroundStyle(Theme.textPrimary)
+                                Text(exercise.primaryMuscleGroups.map(\.displayName).joined(separator: " · "))
+                                    .font(.caption)
+                                    .foregroundStyle(Theme.textSecondary)
+                            }
+                            Spacer()
+                            if selectedExercise?.id == exercise.id {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(Theme.accent)
+                            }
                         }
                     }
+                    .buttonStyle(.plain)
+
+                    favoriteButton(for: exercise)
                 }
                 .listRowBackground(Theme.surface)
             }
@@ -136,6 +141,23 @@ struct AddExerciseEntryView: View {
             }
             .font(.footnote)
         }
+    }
+
+    /// Star at the trailing edge of a catalog row. `.borderless` so it takes its own taps
+    /// instead of the row's select button swallowing them. Filled/outline carries the
+    /// state rather than colour — accent is reserved for "done / on target / primary".
+    private func favoriteButton(for exercise: Exercise) -> some View {
+        let isFavorite = store.isFavorite(exercise.name)
+        return Button {
+            store.toggleFavorite(exercise.name)
+        } label: {
+            Image(systemName: isFavorite ? "star.fill" : "star")
+                .font(.footnote)
+                .foregroundStyle(isFavorite ? Theme.textPrimary : Theme.textSecondary.opacity(0.5))
+                .frame(width: 44, height: 36, alignment: .trailing)
+        }
+        .buttonStyle(.borderless)
+        .accessibilityLabel(isFavorite ? "Unfavorite \(exercise.name)" : "Favorite \(exercise.name)")
     }
 
     @ViewBuilder

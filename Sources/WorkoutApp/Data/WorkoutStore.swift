@@ -16,17 +16,22 @@ final class WorkoutStore: ObservableObject {
     @Published private(set) var templates: [WorkoutTemplate]
     @Published private(set) var activeSession: WorkoutSession?
     @Published private(set) var setLogs: [SetLog]
+    /// Catalog exercises the user starred, by name — the same join key templates and set
+    /// logs use, so a favourite survives anything but renaming the catalog entry.
+    @Published private(set) var favoriteExerciseNames: Set<String>
     @Published var selectedTab: AppTab = .templates
 
     private static let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
     private let templatesURL = documentsDirectory.appendingPathComponent("workout_templates.json")
     private let sessionURL = documentsDirectory.appendingPathComponent("active_session.json")
     private let setLogsURL = documentsDirectory.appendingPathComponent("set_logs.json")
+    private let favoritesURL = documentsDirectory.appendingPathComponent("favorite_exercises.json")
 
     init() {
         templates = Self.load([WorkoutTemplate].self, from: templatesURL) ?? SeedTemplates.all
         activeSession = Self.load(WorkoutSession.self, from: sessionURL)
         setLogs = Self.load([SetLog].self, from: setLogsURL) ?? []
+        favoriteExerciseNames = Self.load(Set<String>.self, from: favoritesURL) ?? []
         backfillTemplateCategories()
     }
 
@@ -106,6 +111,21 @@ final class WorkoutStore: ObservableObject {
         guard let index = templates.firstIndex(where: { $0.id == templateID }) else { return }
         templates[index].exercises.remove(atOffsets: offsets)
         saveTemplates()
+    }
+
+    // MARK: - Favorites
+
+    func isFavorite(_ exerciseName: String) -> Bool {
+        favoriteExerciseNames.contains(exerciseName)
+    }
+
+    func toggleFavorite(_ exerciseName: String) {
+        if favoriteExerciseNames.contains(exerciseName) {
+            favoriteExerciseNames.remove(exerciseName)
+        } else {
+            favoriteExerciseNames.insert(exerciseName)
+        }
+        saveFavorites()
     }
 
     // MARK: - Workout sessions
@@ -248,6 +268,10 @@ final class WorkoutStore: ObservableObject {
 
     private func saveSetLogs() {
         save(setLogs, to: setLogsURL)
+    }
+
+    private func saveFavorites() {
+        save(favoriteExerciseNames, to: favoritesURL)
     }
 
     private func save<T: Encodable>(_ value: T, to url: URL) {

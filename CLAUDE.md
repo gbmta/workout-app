@@ -54,8 +54,8 @@ Sources/WorkoutApp/
 ```
 
 `WorkoutStore` is an `@MainActor ObservableObject` injected via `.environmentObject`,
-persisting three files (`workout_templates.json`, `active_session.json`,
-`set_logs.json`). It's the seam where the future backend swaps in — keep views free of
+persisting four files (`workout_templates.json`, `active_session.json`,
+`set_logs.json`, `favorite_exercises.json`). It's the seam where the future backend swaps in — keep views free of
 persistence logic.
 
 ## Conventions
