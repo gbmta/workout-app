@@ -9,7 +9,9 @@ enum Theme {
 
     static let bg = dynamicColor(dark: 0x0D0D0F, light: 0xF4F4F6)
     static let surface = dynamicColor(dark: 0x1A1A1E, light: 0xFFFFFF)
-    static let surfaceRaised = dynamicColor(dark: 0x232329, light: 0xFFFFFF)
+    /// Sits on top of `surface`, so its light value has to differ from `surface`'s white
+    /// — otherwise raised elements (number fields, muscle chips) vanish in light mode.
+    static let surfaceRaised = dynamicColor(dark: 0x232329, light: 0xEDEDF0)
     static let accent = dynamicColor(dark: 0xBFFF3C, light: 0x7BC618)
     static let onAccent = dynamicColor(dark: 0x0D0D0F, light: 0xFFFFFF)
     static let textPrimary = dynamicColor(dark: 0xF5F5F7, light: 0x111113)

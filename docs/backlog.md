@@ -50,12 +50,24 @@ by `didOverrideBodyweight`, set from a write-through `Binding`. After a manual c
 the user's choice sticks for the rest of the sheet, even when switching to a different
 bodyweight-default exercise. Catalog defaults still apply on a fresh sheet.
 
-### 4. Target section in Add Exercise is confusing — UX redesign
-Three stacked Steppers (Sets / Rep range low / Rep range high) plus a Bodyweight
-toggle feels disjointed and slow to use (lots of individual +/- taps for e.g. 15 reps).
-Consider a more compact layout — maybe inline number fields like the workout logger's
-`SetRow` uses, or a combined sets×reps control — rather than three separate stepper
-rows. No firm design yet; worth a quick sketch/discussion before building.
+### 4. ~~Target section in Add Exercise is confusing~~ — DONE 2026-07-30
+Replaced the three Steppers with tap-to-type number fields in `ExerciseTargetFields`,
+following the `SetRow` idiom, on `.numberPad` (whole numbers, so no `.decimalPad` like
+`SetRow` needs for weight). Layout is now `Sets [4]` / `Reps [8] – [10]` / Bodyweight.
+Setting 15 reps went from 7 stepper taps to 3.
+
+Details worth knowing before touching it again:
+- **Focus clears the field**, with the current value left as the placeholder. Without
+  that, the caret lands where you tapped and typing 15 into "10" gives 1510.
+- **Empty on blur keeps the previous value**; out-of-range input clamps (99 → 50).
+- **One keyboard toolbar `Done`**, declared on a single row on purpose — `.toolbar` on
+  the enclosing `Section` is applied per row and stacks up one button per row.
+  `.numberPad` has no return key, so the button is load-bearing.
+- Invalid ranges now say so in the section footer instead of only disabling Save.
+
+Also fixed `Theme.surfaceRaised`, which was `0xFFFFFF` in light mode — identical to
+`surface`, so every raised element (these fields, `SetRow`'s, the muscle chips) was
+invisible against its card. Now `0xEDEDF0`.
 
 ### 5. Volume zone coloring isn't self-explanatory — education/UX
 Template summary card and Volume tab both show a range like "6 of 6–12 · on target"
@@ -73,8 +85,6 @@ you can see at a glance which muscle each exercise/position hits. Low priority p
 
 ## Suggested order for next session
 
-**#1, #2 and #3 are done.** What's left is the two design conversations and one polish
-item. **#4** and **#5** are genuine discussions, not quick fixes — good candidates for a
-"let's talk through it" opening rather than diving into code; #4 now only has to change
-`ExerciseTargetFields`, which both the add and edit sheets share. **#6** whenever there's
-spare time at the end.
+**#1–#4 are done.** Left: **#5** (explaining the volume zones) — still a genuine design
+discussion, mostly about tone: how much hypertrophy-research detail to surface vs. keep it
+simple. Then **#6** (muscle icons on the workout progress capsules) as polish.
