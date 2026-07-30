@@ -67,8 +67,15 @@ final class WorkoutStore: ObservableObject {
     }
 
     func addExercise(_ entry: ExerciseTemplateEntry, to templateID: WorkoutTemplate.ID) {
-        guard let index = templates.firstIndex(where: { $0.id == templateID }) else { return }
-        templates[index].exercises.append(entry)
+        addExercises([entry], to: templateID)
+    }
+
+    /// Appends in the order given — the picker hands these over in the order they were
+    /// tapped — and writes the file once rather than per exercise.
+    func addExercises(_ entries: [ExerciseTemplateEntry], to templateID: WorkoutTemplate.ID) {
+        guard !entries.isEmpty,
+              let index = templates.firstIndex(where: { $0.id == templateID }) else { return }
+        templates[index].exercises.append(contentsOf: entries)
         saveTemplates()
     }
 

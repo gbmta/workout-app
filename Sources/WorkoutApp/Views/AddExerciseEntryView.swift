@@ -6,7 +6,8 @@ struct AddExerciseEntryView: View {
     @EnvironmentObject private var store: WorkoutStore
     @Environment(\.dismiss) private var dismiss
 
-    @State private var selectedExercise: Exercise?
+    /// Selection order, so exercises land in the template in the order they were tapped.
+    @State private var selectedExercises: [Exercise] = []
     @State private var customName = ""
     @State private var customMuscles: Set<MuscleGroup> = []
     @State private var isAddingCustom = false
@@ -40,21 +41,41 @@ struct AddExerciseEntryView: View {
         return haystack.contains { $0.localizedCaseInsensitiveContains(query) }
     }
 
-    private var resolvedName: String {
-        isAddingCustom ? customName.trimmingCharacters(in: .whitespaces) : (selectedExercise?.name ?? "")
+    private var customExerciseName: String {
+        customName.trimmingCharacters(in: .whitespaces)
     }
 
-    private var resolvedMuscles: [MuscleGroup] {
-        if isAddingCustom {
-            return MuscleGroup.allCases.filter { customMuscles.contains($0) }
-        }
-        return selectedExercise?.primaryMuscleGroups ?? []
+    private var customExerciseMuscles: [MuscleGroup] {
+        MuscleGroup.allCases.filter { customMuscles.contains($0) }
+    }
+
+    private func isSelected(_ exercise: Exercise) -> Bool {
+        selectedExercises.contains { $0.id == exercise.id }
     }
 
     private var isValid: Bool {
-        !resolvedName.isEmpty
-            && !resolvedMuscles.isEmpty
-            && ExerciseTargetFields.isValidRange(low: repRangeLow, high: repRangeHigh)
+        guard ExerciseTargetFields.isValidRange(low: repRangeLow, high: repRangeHigh) else { return false }
+        if isAddingCustom {
+            return !customExerciseName.isEmpty && !customExerciseMuscles.isEmpty
+        }
+        return !selectedExercises.isEmpty
+    }
+
+    private var addButtonTitle: String {
+        selectedExercises.count > 1 && !isAddingCustom ? "Add \(selectedExercises.count)" : "Add"
+    }
+
+    /// What the Bodyweight toggle shows. Until the user sets it themselves it summarises
+    /// the per-exercise catalog defaults, which is what `addEntry` will actually apply —
+    /// so it only reads "on" when every selected exercise is a bodyweight movement.
+    private var effectiveBodyweight: Bool {
+        if didOverrideBodyweight || isAddingCustom { return isBodyweight }
+        return !selectedExercises.isEmpty && selectedExercises.allSatisfy(\.defaultsToBodyweight)
+    }
+
+    private var targetNote: String? {
+        guard !isAddingCustom, selectedExercises.count > 1 else { return nil }
+        return "Applies to all \(selectedExercises.count). Bodyweight follows each exercise unless you set it here."
     }
 
     var body: some View {
@@ -78,7 +99,7 @@ struct AddExerciseEntryView: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Add", action: addEntry)
+                    Button(addButtonTitle, action: addEntry)
                         .disabled(!isValid)
                 }
             }
@@ -108,36 +129,45 @@ struct AddExerciseEntryView: View {
             }
             ForEach(matches) { exercise in
                 HStack(spacing: 0) {
-                    Button {
-                        select(exercise)
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(exercise.name)
-                                    .foregroundStyle(Theme.textPrimary)
-                                Text(exercise.primaryMuscleGroups.map(\.displayName).joined(separator: " · "))
-                                    .font(.caption)
-                                    .foregroundStyle(Theme.textSecondary)
-                            }
-                            Spacer()
-                            if selectedExercise?.id == exercise.id {
-                                Image(systemName: "checkmark")
-                                    .foregroundStyle(Theme.accent)
-                            }
+                    // Selection is a tap gesture rather than a Button on purpose: a List
+                    // row holding a single Button gets the *whole* row as that button's
+                    // hit area, so the star overlapped it and one tap both selected the
+                    // exercise and favorited it.
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(exercise.name)
+                                .foregroundStyle(Theme.textPrimary)
+                            Text(exercise.primaryMuscleGroups.map(\.displayName).joined(separator: " · "))
+                                .font(.caption)
+                                .foregroundStyle(Theme.textSecondary)
+                        }
+                        Spacer()
+                        if isSelected(exercise) {
+                            Image(systemName: "checkmark")
+                                .foregroundStyle(Theme.accent)
                         }
                     }
-                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
+                    .onTapGesture { toggleSelection(exercise) }
+                    .accessibilityAddTraits(isSelected(exercise) ? [.isButton, .isSelected] : .isButton)
 
                     favoriteButton(for: exercise)
                 }
                 .listRowBackground(Theme.surface)
             }
         } header: {
-            Text("\(matches.count) exercise\(matches.count == 1 ? "" : "s")")
+            HStack {
+                Text("\(matches.count) exercise\(matches.count == 1 ? "" : "s")")
+                if !selectedExercises.isEmpty {
+                    Spacer()
+                    Text("\(selectedExercises.count) selected")
+                        .foregroundStyle(Theme.accent)
+                }
+            }
         } footer: {
             Button("Add a custom exercise instead") {
                 isAddingCustom = true
-                selectedExercise = nil
+                selectedExercises = []
             }
             .font(.footnote)
         }
@@ -211,15 +241,16 @@ struct AddExerciseEntryView: View {
             targetSets: $targetSets,
             repRangeLow: $repRangeLow,
             repRangeHigh: $repRangeHigh,
-            isBodyweight: userSetBodyweight
+            isBodyweight: userSetBodyweight,
+            note: targetNote
         )
     }
 
-    /// Writes through to `isBodyweight`, remembering that the value came from the user
-    /// so `select(_:)` stops seeding it from the catalog.
+    /// Reads the summarised default but writes a real override, so once the user touches
+    /// the toggle their choice applies to everything selected instead of the catalog's.
     private var userSetBodyweight: Binding<Bool> {
         Binding(
-            get: { isBodyweight },
+            get: { effectiveBodyweight },
             set: { newValue in
                 isBodyweight = newValue
                 didOverrideBodyweight = true
@@ -235,29 +266,46 @@ struct AddExerciseEntryView: View {
         categoryFilter = template?.category
     }
 
-    private func select(_ exercise: Exercise) {
-        // Re-tapping the row you already picked shouldn't change your target at all.
-        // It used to re-apply the catalog default, which made the bodyweight toggle
-        // look broken: turn it off on Dips, brush the row again, and it snapped back on.
-        guard selectedExercise?.id != exercise.id else { return }
-        selectedExercise = exercise
-        // Seed from the catalog only while the user hasn't set the toggle themselves.
-        // Once they have, their choice wins over the default for the rest of the sheet.
-        if !didOverrideBodyweight {
-            isBodyweight = exercise.defaultsToBodyweight
+    /// Tapping a row adds it to the selection, tapping it again removes it. Note that
+    /// nothing here writes `isBodyweight` — that's what used to make the toggle look
+    /// broken (turn it off on Dips, brush the row again, it snapped back on). The toggle
+    /// derives its value from the selection instead, via `effectiveBodyweight`.
+    private func toggleSelection(_ exercise: Exercise) {
+        if let index = selectedExercises.firstIndex(where: { $0.id == exercise.id }) {
+            selectedExercises.remove(at: index)
+        } else {
+            selectedExercises.append(exercise)
         }
     }
 
     private func addEntry() {
-        let entry = ExerciseTemplateEntry(
-            exerciseName: resolvedName,
-            targetSets: targetSets,
-            repRangeLow: repRangeLow,
-            repRangeHigh: repRangeHigh,
-            isBodyweight: isBodyweight,
-            muscleGroups: resolvedMuscles
-        )
-        store.addExercise(entry, to: templateID)
+        if isAddingCustom {
+            let entry = ExerciseTemplateEntry(
+                exerciseName: customExerciseName,
+                targetSets: targetSets,
+                repRangeLow: repRangeLow,
+                repRangeHigh: repRangeHigh,
+                isBodyweight: isBodyweight,
+                muscleGroups: customExerciseMuscles
+            )
+            store.addExercises([entry], to: templateID)
+            dismiss()
+            return
+        }
+
+        let entries = selectedExercises.map { exercise in
+            ExerciseTemplateEntry(
+                exerciseName: exercise.name,
+                targetSets: targetSets,
+                repRangeLow: repRangeLow,
+                repRangeHigh: repRangeHigh,
+                // Sets and reps are shared, but bodyweight isn't: selecting Pull Ups and
+                // Barbell Row together shouldn't mark the row as bodyweight.
+                isBodyweight: didOverrideBodyweight ? isBodyweight : exercise.defaultsToBodyweight,
+                muscleGroups: exercise.primaryMuscleGroups
+            )
+        }
+        store.addExercises(entries, to: templateID)
         dismiss()
     }
 }

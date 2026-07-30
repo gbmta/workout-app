@@ -20,6 +20,8 @@ struct ExerciseTargetFields: View {
     @Binding var repRangeLow: Int
     @Binding var repRangeHigh: Int
     @Binding var isBodyweight: Bool
+    /// Optional line under the section, e.g. to say the target covers a multi-selection.
+    var note: String?
 
     @FocusState private var focused: TargetField?
 
@@ -78,10 +80,15 @@ struct ExerciseTargetFields: View {
         } header: {
             Text("Target")
         } footer: {
-            if !Self.isValidRange(low: repRangeLow, high: repRangeHigh) {
-                Text("The low end of the rep range can't be above the high end.")
-                    .foregroundStyle(Theme.textSecondary)
+            VStack(alignment: .leading, spacing: 4) {
+                if let note {
+                    Text(note)
+                }
+                if !Self.isValidRange(low: repRangeLow, high: repRangeHigh) {
+                    Text("The low end of the rep range can't be above the high end.")
+                }
             }
+            .foregroundStyle(Theme.textSecondary)
         }
         .listRowBackground(Theme.surface)
     }

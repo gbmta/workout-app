@@ -50,14 +50,15 @@ struct TemplateDetailView: View {
                                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
 
                             ForEach(template.exercises) { entry in
-                                Button {
-                                    editingTargetFor = entry
-                                } label: {
-                                    ExerciseEntryCard(entry: entry) {
-                                        editingNoteFor = entry
-                                    }
+                                // Tap gesture, not a Button: a List row containing one
+                                // Button takes the whole row as its hit area, so the
+                                // note button inside would fire this too.
+                                ExerciseEntryCard(entry: entry) {
+                                    editingNoteFor = entry
                                 }
-                                .buttonStyle(.plain)
+                                .contentShape(Rectangle())
+                                .onTapGesture { editingTargetFor = entry }
+                                .accessibilityAddTraits(.isButton)
                                 .listRowSeparator(.hidden)
                                 .listRowBackground(Color.clear)
                                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
