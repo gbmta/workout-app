@@ -18,6 +18,7 @@ struct AddExerciseEntryView: View {
     @State private var repRangeLow = 8
     @State private var repRangeHigh = 12
     @State private var isBodyweight = false
+    @State private var didOverrideBodyweight = false
 
     private var template: WorkoutTemplate? {
         store.templates.first { $0.id == templateID }
@@ -188,7 +189,19 @@ struct AddExerciseEntryView: View {
             targetSets: $targetSets,
             repRangeLow: $repRangeLow,
             repRangeHigh: $repRangeHigh,
-            isBodyweight: $isBodyweight
+            isBodyweight: userSetBodyweight
+        )
+    }
+
+    /// Writes through to `isBodyweight`, remembering that the value came from the user
+    /// so `select(_:)` stops seeding it from the catalog.
+    private var userSetBodyweight: Binding<Bool> {
+        Binding(
+            get: { isBodyweight },
+            set: { newValue in
+                isBodyweight = newValue
+                didOverrideBodyweight = true
+            }
         )
     }
 
@@ -201,8 +214,16 @@ struct AddExerciseEntryView: View {
     }
 
     private func select(_ exercise: Exercise) {
+        // Re-tapping the row you already picked shouldn't change your target at all.
+        // It used to re-apply the catalog default, which made the bodyweight toggle
+        // look broken: turn it off on Dips, brush the row again, and it snapped back on.
+        guard selectedExercise?.id != exercise.id else { return }
         selectedExercise = exercise
-        isBodyweight = exercise.defaultsToBodyweight
+        // Seed from the catalog only while the user hasn't set the toggle themselves.
+        // Once they have, their choice wins over the default for the rest of the sheet.
+        if !didOverrideBodyweight {
+            isBodyweight = exercise.defaultsToBodyweight
+        }
     }
 
     private func addEntry() {

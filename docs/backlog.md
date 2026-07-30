@@ -36,14 +36,19 @@ to remove/re-add to change them.
 Sets/reps/bodyweight controls now live in one shared `ExerciseTargetFields` used by both
 the add and edit sheets, so **#4's redesign only has to be done once**.
 
-### 3. Bodyweight toggle bug — needs repro
-User report: "the bodyweight slider option doesn't turn off when you turn it on."
-Wording is ambiguous — could mean (a) toggling doesn't visually respond, (b) it turns
-on but can't be turned back off, or (c) something resets it. Hypothesis to check first:
-in `AddExerciseEntryView.select(_:)`, tapping a catalog exercise sets
-`isBodyweight = exercise.defaultsToBodyweight` — if a user manually overrides the
-toggle and then taps any exercise row again (even the same one), it silently resets.
-Reproduce in simulator before fixing blind.
+### 3. ~~Bodyweight toggle bug~~ — DONE 2026-07-30
+Reproduced, and the standing hypothesis was right: `AddExerciseEntryView.select(_:)`
+unconditionally re-applied `exercise.defaultsToBodyweight`. Repro was: pick Dips (which
+defaults to bodyweight, so the toggle turns itself on), turn it off, tap the Dips row
+again — it snapped straight back on. Reading (b) of the report was the accurate one, and
+it only bites on the six `defaultsToBodyweight: true` exercises, where the toggle starts
+on and therefore looks un-turn-off-able.
+
+Fix: `select(_:)` returns early when the tapped exercise is already selected, and seeds
+`isBodyweight` from the catalog only until the user sets the toggle themselves — tracked
+by `didOverrideBodyweight`, set from a write-through `Binding`. After a manual change,
+the user's choice sticks for the rest of the sheet, even when switching to a different
+bodyweight-default exercise. Catalog defaults still apply on a fresh sheet.
 
 ### 4. Target section in Add Exercise is confusing — UX redesign
 Three stacked Steppers (Sets / Rep range low / Rep range high) plus a Bodyweight
@@ -68,8 +73,8 @@ you can see at a glance which muscle each exercise/position hits. Low priority p
 
 ## Suggested order for next session
 
-**#1 and #2 are done.** Next up **#3 (bodyweight toggle)** — reproduce in the simulator
-before fixing; note the edit sheet added in #2 is a second place that toggle now lives.
-**#4** and **#5** are genuine design discussions, not quick fixes — good candidates for a
+**#1, #2 and #3 are done.** What's left is the two design conversations and one polish
+item. **#4** and **#5** are genuine discussions, not quick fixes — good candidates for a
 "let's talk through it" opening rather than diving into code; #4 now only has to change
-`ExerciseTargetFields`. **#6** whenever there's spare time at the end.
+`ExerciseTargetFields`, which both the add and edit sheets share. **#6** whenever there's
+spare time at the end.
