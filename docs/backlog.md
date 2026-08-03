@@ -1,127 +1,56 @@
 # Backlog
 
-Captured 2026-07-29, end of session, to pick up fresh next time without replaying the
-whole conversation. Read this file, then just say which item to start on — no need to
-re-explain the app, it's all below.
+The live task list. Read this first, then just say which item to start on — no need to
+re-explain the app, it's all below. When an item ships, drop it to the "Shipped" log at
+the bottom (full rationale stays in git history).
 
 ## Current state (context for a fresh session)
 
 SwiftUI app, dark-first volt-green theme (`Theme.swift`). Three tabs: Templates
-(browse/build routines), Workout (live session logging, swipe between exercises),
-Volume (weekly muscle-group set counts vs. hypertrophy ranges). 50-exercise tagged
-catalog in `SeedExercises.swift` (category + primary muscles per exercise). Templates
-now show a volume summary card projecting logged sets + this template against weekly
-ranges. All of that is committed on `main` now.
+(browse/build routines, edit an exercise's target inline), Workout (live session logging,
+swipe between exercises, an animated motion diagram per exercise), Volume (weekly
+muscle-group set counts vs. hypertrophy ranges). 50-exercise tagged catalog in
+`SeedExercises.swift`; every catalog exercise now has an animated diagram (`ExercisePoses`
+→ `ExerciseMotionDiagramView`). Templates show a volume summary card projecting logged
+sets + this template against weekly ranges. All committed on `main`.
 
-## Backlog items, roughly in priority order
+## Open items, roughly in priority order
 
-### 1. ~~Search doesn't match muscle/category tags~~ — DONE 2026-07-30
-`AddExerciseEntryView` now matches the query against the exercise's name, its
-`primaryMuscleGroups` display names, and its `categories` display names. Verified in the
-simulator: "chest" returns 9 exercises (was 1 — only "Machine Chest Press" matched by
-name), "core" returns the 4 abs exercises, name search unaffected.
-
-### 2. ~~Can't edit an exercise's sets/reps/target from the template screen~~ — DONE 2026-07-30
-Tapping an exercise card in `TemplateDetailView` now opens `EditExerciseTargetView`, a
-dedicated sheet (modeled on `EditExerciseNoteView`) with the target controls pre-filled.
-It saves through `WorkoutStore.updateExercise(_:in:targetSets:repRangeLow:repRangeHigh:isBodyweight:)`,
-which touches only those four fields — `loggedWeights`/`loggedReps`/`notes`/`muscleGroups`
-are left alone.
-
-Chose a dedicated sheet over reusing `AddExerciseEntryView` because that view is mostly
-catalog picker, and `exerciseName` is the join key for logged history — an edit screen
-must not be able to change it. The sheet shows the entry's muscles read-only with a note
-to remove/re-add to change them.
-
-Sets/reps/bodyweight controls now live in one shared `ExerciseTargetFields` used by both
-the add and edit sheets, so **#4's redesign only has to be done once**.
-
-### 3. ~~Bodyweight toggle bug~~ — DONE 2026-07-30
-Reproduced, and the standing hypothesis was right: `AddExerciseEntryView.select(_:)`
-unconditionally re-applied `exercise.defaultsToBodyweight`. Repro was: pick Dips (which
-defaults to bodyweight, so the toggle turns itself on), turn it off, tap the Dips row
-again — it snapped straight back on. Reading (b) of the report was the accurate one, and
-it only bites on the six `defaultsToBodyweight: true` exercises, where the toggle starts
-on and therefore looks un-turn-off-able.
-
-Fix: `select(_:)` returns early when the tapped exercise is already selected, and seeds
-`isBodyweight` from the catalog only until the user sets the toggle themselves — tracked
-by `didOverrideBodyweight`, set from a write-through `Binding`. After a manual change,
-the user's choice sticks for the rest of the sheet, even when switching to a different
-bodyweight-default exercise. Catalog defaults still apply on a fresh sheet.
-
-### 4. ~~Target section in Add Exercise is confusing~~ — DONE 2026-07-30
-Replaced the three Steppers with tap-to-type number fields in `ExerciseTargetFields`,
-following the `SetRow` idiom, keyboard included: `.decimalPad`, per user preference for
-consistency with the workout logger. Layout is now `Sets [4]` / `Reps [8] – [10]` /
-Bodyweight. Setting 15 reps went from 7 stepper taps to 3.
-
-Details worth knowing before touching it again:
-- **Focus clears the field**, with the current value left as the placeholder. Without
-  that, the caret lands where you tapped and typing 15 into "10" gives 1510.
-- **Empty on blur keeps the previous value**; out-of-range input clamps (99 → 50).
-- **Typed decimals round to the nearest whole number on commit** (8.6 → 9). Sets and reps
-  are `Int` in the model, so the `.` would otherwise be a dead key. A lone `.` is dropped
-  and keeps the previous value. Both `.` and `,` are accepted for comma locales.
-- **One keyboard toolbar `Done`**, declared on a single row on purpose — `.toolbar` on
-  the enclosing `Section` is applied per row and stacks up one button per row.
-  `.decimalPad` has no return key, so the button is load-bearing.
-- Invalid ranges now say so in the section footer instead of only disabling Save.
-
-Also fixed `Theme.surfaceRaised`, which was `0xFFFFFF` in light mode — identical to
-`surface`, so every raised element (these fields, `SetRow`'s, the muscle chips) was
-invisible against its card. Now `0xEDEDF0`.
-
-### 5. Volume zone coloring isn't self-explanatory — education/UX
+### 1. Volume zone coloring isn't self-explanatory — education/UX
 Template summary card and Volume tab both show a range like "6 of 6–12 · on target"
 with color coding, but a user who doesn't know the hypertrophy-research backstory
 (why 6–12, why weekly, why per-muscle) has no way to learn it from the UI. Needs some
 kind of lightweight explainer — an info button/tooltip, a one-time card, or reworded
-labels — so the color-coding is trustworthy rather than just asserted. No firm design
-yet either; worth discussing tone (how much science to surface vs. keep it simple).
+labels — so the color-coding is trustworthy rather than just asserted.
+**Needs a call from you:** the tone — how much science to surface vs. keep it simple.
+No firm design yet.
 
-### 6. Muscle icon on the exercise progress capsules — nice-to-have, backlog
-In `ActiveWorkoutView`, the row of capsules at the top (tap to jump exercises) only
-shows fill color for logged/current/untouched. Idea: show a small muscle-group icon
-per capsule (reuse the SF Symbol mapping already written for `VolumeTrackerView`) so
-you can see at a glance which muscle each exercise/position hits. Low priority polish.
-
-### 7. Keypad doesn't appear when editing a target field — bug, needs repro on device
+### 2. Keypad doesn't appear when editing a target field — bug, needs repro on device
 Reported 2026-07-30 editing Incline Smith Machine Press: tapping a Sets/Reps field
 doesn't pop the number keypad. In the simulator the field clearly *focuses* — accent
 ring, blinking cursor, and the keyboard "Done" accessory bar shows — but the on-screen
 keys don't draw. That signature points at the sim's hardware-keyboard setting
 (`hw=Automatic`, `HardwareKeyboardLastSeen`) suppressing the software keyboard, i.e. a
-simulator artifact rather than app code — but it was reported from real use, so **repro
-on a physical device before assuming that.** If it reproduces on device, suspect the
-`.focused`/`FocusState` wiring in `ExerciseTargetFields` or a responder conflict with the
-`.onTapGesture` row selection added in the multi-select change. Related tooling note:
-[[simulator-toggle-taps]] — sim input has already faked one "app bug" this project.
+simulator artifact rather than app code.
+**Needs you:** repro on a physical device before assuming that. If it reproduces on
+device, suspect the `.focused`/`FocusState` wiring in `ExerciseTargetFields` or a
+responder conflict with the `.onTapGesture` row selection added in the multi-select
+change. Related tooling note: [[simulator-toggle-taps]] — sim input has already faked one
+"app bug" this project.
 
-### 8. ~~Animated exercise motion diagrams (all 50)~~ — DONE 2026-07-30
-Shipped the design handoff ("Exercise motion diagram system"). A generic, data-driven
-`Canvas` + `TimelineView` renderer (`ExerciseMotionDiagramView`) draws a schematic figure
-looping one rep on a cosine ease, with a muscle-target glow that pulses brightest where the
-lift should be felt. Ported **all 50 poses** into Swift value types
-(`Models/ExercisePose.swift` + `Data/ExercisePoses.swift`, canonical order), keyed to catalog
-`Exercise.name` — every name maps exactly, so all 50 catalog exercises now have a diagram.
-(First landed as 10; the handoff's "all 50" bundle followed the same day.)
+### 3. Muscle icon on the exercise progress capsules — nice-to-have polish
+In `ActiveWorkoutView`, the row of capsules at the top (tap to jump exercises) only
+shows fill color for logged/current/untouched. Idea: show a small muscle-group icon
+per capsule (reuse the SF Symbol mapping already written for `VolumeTrackerView`) so
+you can see at a glance which muscle each exercise/position hits. Low priority polish;
+no decision needed from you.
 
-- Shows on the **workout screen** where the `ExerciseMediaPlaceholderView` demo slot was.
-  The "Demo coming soon" fallback now only shows for a pose-less exercise (none today). The
-  diagram card is followed by the pose's "Feel" mind-muscle cue. Tempo copy is deliberately
-  *not* shown — it would contradict the user's own configured target.
-- Accent ramp swapped from the handoff's Nocturne blurple to a **volt-green ramp** (new
-  `Theme.Diagram` tokens) per user choice, so it reads as part of the app. Body figure stays
-  neutral grey; light-mode ramp is darkened for legibility on white. Verified both modes in
-  the sim across front/side views, cables, machine rails, seats, and the pulldown handle bar.
-- The all-50 bundle extended the scaffold vocabulary: `PoseScaffold.lines` (free rail/machine
-  strokes), `PoseScaffold.rects` (pads/seats), and a bar `len` (horizontal handle bar, e.g.
-  lat pulldown). Renderer handles all three; adding a new exercise stays pure data entry.
-- Honors Reduce Motion (freezes on the end pose, glow at mid opacity).
+## Shipped (2026-07-30)
 
-## Suggested order for next session
+- **Search matches muscle/category tags, not just names** — `AddExerciseEntryView`.
+- **Edit an exercise's sets/reps/target inline from the template screen** — `EditExerciseTargetView`.
+- **Bodyweight toggle no longer snaps back on** for `defaultsToBodyweight` exercises — `AddExerciseEntryView.select`.
+- **Add-Exercise target section: tap-to-type number fields** replace the steppers — `ExerciseTargetFields`.
+- **Animated exercise motion diagrams for all 50 exercises** — `ExerciseMotionDiagramView` + `ExercisePoses` (see the standing decision in `CLAUDE.md`).
 
-**#1–#4 and #8 are done.** Left: **#5** (explaining the volume zones) — still a genuine
-design discussion, mostly about tone: how much hypertrophy-research detail to surface vs.
-keep it simple. Then **#6** (muscle icons on the workout progress capsules) as polish.
+Full rationale and implementation gotchas for each live in this file's earlier git revisions.
